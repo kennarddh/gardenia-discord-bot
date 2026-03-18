@@ -49,7 +49,7 @@ module.exports = {
                         amount: 1
                     });
                 }
-
+                
                 harvestResults.push(`${mutation.name} **${plant.plantName}** (Worth 🪙 ${finalValue})`);
             } else {
                 newGarden.push(plant);

@@ -2,6 +2,8 @@
 const fs = require("node:fs");
 const path = require("node:path");
 const mongoose = require("mongoose");
+const util = require("util");
+
 require("dotenv").config();
 const { 
 	Client, 
@@ -101,9 +103,10 @@ client.on(Events.InteractionCreate, async interaction => {
 	setTimeout(() => timestamps.delete(interaction.user.id), cooldownAmount);
 
 	try {
+		console.log({interaction})
 		await command.execute(interaction);
 	} catch (error) {
-		console.error(error);
+		console.log(util.inspect(error, { depth: null }));;
 		if (interaction.replied || interaction.deferred) {
 			await interaction.followUp({ content: "There was an error while executing this command!", flags: MessageFlags.Ephemeral });
 		} else {

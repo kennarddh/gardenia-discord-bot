@@ -32,7 +32,7 @@ module.exports = {
                 .setTitle("Welcome to your Garden!")
                 .setColor("#2ECC71")
                 .setDescription(
-                    `You have inherited a small plot of land!\n\nI have given you **🪙 ${startingBloomBuck} BloomBucks** to get you started.`,
+                    `You have inherited a small plot of land!\n\nI have given you **🪙 ${startingBloomBuck} Coins** to get you started.`,
                 )
                 .addFields(
                     { name: "Step 1", value: "Use `/plant seed:Wheat` to plant your first crop." },
