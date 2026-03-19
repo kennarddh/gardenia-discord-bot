@@ -2,7 +2,6 @@ const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const UserProfile = require('../../models/userProfile');
 const plantsData = require('../../data/plantsData');
 const { getMutation } = require('../../utils/rng');
-const { showNoProfileMessage } = require('../../constants/extraInformation');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -12,11 +11,9 @@ module.exports = {
     async execute(interaction) {
         const profile = await UserProfile.findOne({ userId: interaction.user.id });
 
+        const { sendNoProfileMessage } = require('../../utils/showNoProfileMessage');
         if (!profile) {
-             return interaction.reply({ 
-                content: showNoProfileMessage, 
-                ephemeral: true 
-            });
+            return sendNoProfileMessage(interaction)
         }
 
         if (profile.activeGarden.length === 0) {

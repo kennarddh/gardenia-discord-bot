@@ -9,7 +9,6 @@ const {
 
 const UserProfile = require("../../models/userProfile");
 const plantsData = require("../../data/plantsData");
-const { upgradeCost } = require("../../constants/config");
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -21,11 +20,10 @@ module.exports = {
 
         try {
             const profile = await UserProfile.findOne({ userId: interaction.user.id });
+            
+            const { sendNoProfileMessage } = require('../../utils/showNoProfileMessage');
             if (!profile) {
-                return interaction.reply({ 
-                    content: showNoProfileMessage, 
-                    ephemeral: true 
-                });
+                return sendNoProfileMessage(interaction)
             }
 
             const plantsArray = Object.keys(plantsData).map(key => ({
@@ -33,7 +31,7 @@ module.exports = {
                 ...plantsData[key]
             }));
 
-            const itemsPerPage = 3;
+            const itemsPerPage = 10;
             const totalPages = Math.ceil(plantsArray.length / itemsPerPage);
             let currentPage = 0;
 
@@ -41,33 +39,33 @@ module.exports = {
                 const start = currentPage * itemsPerPage;
                 const currentItems = plantsArray.slice(start, start + itemsPerPage);
 
+                const liveUpgradeCost = profile.currentUpgradeCost || 500;
+
                 const embed = new EmbedBuilder()
-                    .setTitle("The Bloom Shop")
+                    .setTitle("🏪 The Bloom Shop")
                     .setColor("#F1C40F")
-                    .setDescription(`**Your Wallet:** 🪙 ${profile.bloomBuck} BloomBucks\n**Garden Slots:** ${profile.maxSlots}\n\n*Page ${currentPage + 1} of ${totalPages}*`)
+                    .setDescription(`**Your Wallet:** ${profile.bloomBuck} BloomBucks\n**Garden Slots:** ${profile.maxSlots}\n\n*Page ${currentPage + 1} of ${totalPages}*`)
                     .setFooter({ text: "Click a button below to purchase!" });
 
                 currentItems.forEach(item => {
                     const growTimeMins = Math.round(item.growTime / 60000); 
                     embed.addFields({
                         name: `🌱 ${item.name} Seed`,
-                        value: `**Cost:** 🪙 ${item.seedCost} | **Grows in:** ⏱️ ${growTimeMins}m\n*Sells for roughly 🪙 ${item.baseValue}*`,
+                        value: `**Cost:** ${item.seedCost} | **Grows in:** ⏱️ ${growTimeMins}m\n*Sells for roughly ${item.baseValue}*`,
                         inline: false
                     });
                 });
 
-                // buy buttons
                 const buyRow = new ActionRowBuilder();
                 currentItems.forEach(item => {
                     buyRow.addComponents(
                         new ButtonBuilder()
-                            .setCustomId(`buy_${item.name}`) // e.g., "buy_Wheat"
+                            .setCustomId(`buy_${item.name}`)
                             .setLabel(`Buy ${item.name}`)
                             .setStyle(ButtonStyle.Primary)
                     );
                 });
 
-                // navigation and ugprade buttons
                 const navRow = new ActionRowBuilder().addComponents(
                     new ButtonBuilder()
                         .setCustomId("prev")
@@ -77,7 +75,7 @@ module.exports = {
                         
                     new ButtonBuilder()
                         .setCustomId("upgrade")
-                        .setLabel(`Upgrade Garden (${upgradeCost})`)
+                        .setLabel(`Upgrade Garden (${liveUpgradeCost})`)
                         .setStyle(ButtonStyle.Success),
                         
                     new ButtonBuilder()
@@ -115,16 +113,21 @@ module.exports = {
                 }
 
                 if (i.customId === "upgrade") {
-                    if (profile.bloomBuck < upgradeCost) {
-                        return i.reply({ content: `You need 🪙 **${upgradeCost}** to upgrade!`, ephemeral: true });
+                    const currentCost = profile.currentUpgradeCost || 500;
+
+                    if (profile.bloomBuck < currentCost) {
+                        return i.reply({ content: `You need **${currentCost}** to upgrade!`, ephemeral: true });
                     }
-                    profile.bloomBuck -= upgradeCost;
+
+                    profile.bloomBuck -= currentCost;
                     profile.maxSlots += 1;
+
+                    profile.currentUpgradeCost = Math.floor(currentCost * 1.5);
+                    
                     await profile.save();
                     
                     await i.update(generateShopUI()); 
-
-                    await i.followUp({ content: `🏡 Upgraded! You now have **${profile.maxSlots}** slots.`, ephemeral: true });
+                    await i.followUp({ content: `🏡 Upgraded! You now have **${profile.maxSlots}** slots. The next upgrade will cost **${profile.currentUpgradeCost}**.`, ephemeral: true });
                     return;
                 }
 

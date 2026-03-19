@@ -1,83 +1,127 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { 
+    SlashCommandBuilder, 
+    EmbedBuilder, 
+    ActionRowBuilder, 
+    ButtonBuilder, 
+    ButtonStyle, 
+    ComponentType 
+} = require('discord.js');
+
 const UserProfile = require('../../models/userProfile');
-const { showNoProfileMessage } = require('../../constants/extraInformation');
+const { sendNoProfileMessage } = require('../../utils/showNoProfileMessage'); 
 
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('inventory')
-        .setDescription('View everything about your seeds, active garden, and harvested crops.'),
+        .setDescription('View all your harvested plants and mutations in pages.'),
 
     async execute(interaction) {
-        const profile = await UserProfile.findOne({ userId: interaction.user.id });
-        
-        if (!profile) {
-            return interaction.reply({ 
-                content: showNoProfileMessage, 
-                ephemeral: true 
-            });
-        }
+        await interaction.deferReply({ ephemeral: true });
 
-        const embed = new EmbedBuilder()
-            .setTitle(`${interaction.user.username}'s Farm Inventory`)
-            .setColor('#F1C40F')
-            .setThumbnail(interaction.user.displayAvatarURL());
+        try {
+            const profile = await UserProfile.findOne({ userId: interaction.user.id });
 
-        // bloombucks and garden capacity
-        const statsText = `**BloomBuck:** 🪙 ${profile.bloomBuck}\n**Garden Space:** ${profile.activeGarden.length} / ${profile.maxSlots} slots used`;
-        embed.addFields({ name: 'Player Stats', value: statsText, inline: false });
-
-        // seeds (what they can plant)
-        let seedsText = '';
-        let hasSeeds = false;
-
-        for (const [seedName, amount] of profile.seeds.entries()) {
-            if (amount > 0) {
-                seedsText += `• **${amount}x** ${seedName} Seed\n`;
-                hasSeeds = true;
+            if (!profile) {
+                return sendNoProfileMessage(interaction);
             }
-        }
-        
-        if (!hasSeeds) seedsText = '*No seeds. Buy some from the `/shop`!*';
-        embed.addFields({ name: 'Your Seeds', value: seedsText, inline: false });
 
-        // active garden (what is currently growing)
-        let gardenText = '';
-        
-        if (profile.activeGarden.length === 0) {
-            gardenText = '*Your garden is empty. Use `/plant`!*';
-        } else {
-            profile.activeGarden.forEach((plant, index) => {
-                const readyTimestamp = Math.floor(plant.readyAt / 1000);
+            if (!profile.inventory || profile.inventory.length === 0) {
+                const emptyEmbed = new EmbedBuilder()
+                    .setTitle(`${interaction.user.username}'s Inventory`)
+                    .setColor('#E74C3C')
+                    .setDescription("Your inventory is completely empty!.");
                 
-                // check if it's done growing
-                if (Date.now() >= plant.readyAt) {
-                    gardenText += `**${index + 1}.** **${plant.plantName}** - Ready to \`/harvest\`!\n`;
-                } else {
-                    gardenText += `**${index + 1}.** **${plant.plantName}** - Ready <t:${readyTimestamp}:R>\n`;
+                return interaction.editReply({ embeds: [emptyEmbed] });
+            }
+
+            const itemsPerPage = 5;
+            const totalPages = Math.ceil(profile.inventory.length / itemsPerPage);
+            let currentPage = 0;
+
+            const totalInventoryValue = profile.inventory.reduce((total, item) => total + (item.value * item.amount), 0);
+
+            const generateInventoryUI = () => {
+                const start = currentPage * itemsPerPage;
+                const currentItems = profile.inventory.slice(start, start + itemsPerPage);
+
+                const embed = new EmbedBuilder()
+                    .setTitle(`🎒 ${interaction.user.username}'s Harvested Crops`)
+                    .setColor('#3498DB')
+                    .setDescription(`**Total Inventory Value:** 🪙 ${totalInventoryValue} BloomBucks\n\n*Page ${currentPage + 1} of ${totalPages}*`);
+
+                currentItems.forEach(item => {
+                    const stackValue = item.value * item.amount;
+                    embed.addFields({
+                        name: `${item.mutation} ${item.name}`,
+                        value: `**Amount:** ${item.amount}x\n**Sell Value:** 🪙 ${stackValue} (🪙 ${item.value} each)`,
+                        inline: false
+                    });
+                });
+
+                const components = [];
+                if (totalPages > 1) {
+                    const navRow = new ActionRowBuilder().addComponents(
+                        new ButtonBuilder()
+                            .setCustomId("prev")
+                            .setEmoji("◀️")
+                            .setLabel("Previous")
+                            .setStyle(ButtonStyle.Secondary)
+                            .setDisabled(currentPage === 0),
+                            
+                        new ButtonBuilder()
+                            .setCustomId("next")
+                            .setEmoji("▶️")
+                            .setLabel("Next")
+                            .setStyle(ButtonStyle.Secondary)
+                            .setDisabled(currentPage >= totalPages - 1)
+                    );
+                    components.push(navRow);
                 }
-            });
-        }
-        embed.addFields({ name: 'Active Garden', value: gardenText, inline: false });
 
-        // harvested Crops (what they can sell)
-        let cropsText = '';
-        let totalInventoryValue = 0; // calculate how much their inventory is worth
+                return { embeds: [embed], components: components };
+            };
 
-        if (profile.inventory.length === 0) {
-            cropsText = '*No crops harvested yet.*';
-        } else {
-            profile.inventory.forEach(item => {
-                const totalStackValue = item.value * item.amount;
-                totalInventoryValue += totalStackValue;
+            const response = await interaction.editReply(generateInventoryUI());
+
+            if (totalPages > 1) {
+                const collector = response.createMessageComponentCollector({ 
+                    componentType: ComponentType.Button, 
+                    time: 60000
+                });
+
+                collector.on("collect", async (i) => {
+                    if (i.user.id !== interaction.user.id) {
+                        return i.reply({ content: "You cannot click buttons on someone else's inventory!", ephemeral: true });
+                    }
+
+                    if (i.customId === "prev") {
+                        currentPage--;
+                        await i.update(generateInventoryUI());
+                    }
+                    else if (i.customId === "next") {
+                        currentPage++;
+                        await i.update(generateInventoryUI());
+                    }
+                });
+
+                collector.on("end", async () => {
+                    const disabledUi = generateInventoryUI();
+                    disabledUi.components.forEach(row => {
+                        row.components.forEach(button => button.setDisabled(true));
+                    });
                 
-                cropsText += `• **${item.amount}x** ${item.mutation} **${item.name}** (Sells for 🪙 ${totalStackValue})\n`;
-            });
-            
-            // showing total potential money
-            cropsText += `\n*Total Value: 🪙 ${totalInventoryValue}*`;
-        }
-        embed.addFields({ name: 'Harvested Crops', value: cropsText, inline: false });
+                    try {
+                        await interaction.editReply({ 
+                            embeds: disabledUi.embeds, 
+                            components: disabledUi.components
+                        });
+                    } catch (err) {}
+                });
+            }
 
-        await interaction.reply({ embeds: [embed] });
+        } catch (err) {
+            console.error("Error in /inventory command:", err);
+            return interaction.editReply("Something went wrong while trying to open your inventory.");
+        }
     }
 };

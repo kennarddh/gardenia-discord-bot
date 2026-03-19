@@ -11,8 +11,9 @@ module.exports = {
 
         try {
             const profile = await UserProfile.findOne({ userId: interaction.user.id });
+            const { sendNoProfileMessage } = require('../../utils/showNoProfileMessage');
             if (!profile) {
-                return interaction.editReply("You need to `/start` your journey first!");
+                return sendNoProfileMessage(interaction)
             }
 
             if (profile.inventory.length === 0) {
@@ -26,7 +27,7 @@ module.exports = {
             profile.inventory.forEach(item => {
                 const stackValue = item.value * item.amount;
                 totalEarnings += stackValue;
-                soldItemsSummary += `• **${item.amount}x** ${item.mutation} ${item.name} -> 🪙 ${stackValue}\n`;
+                soldItemsSummary += `• **${item.amount}x** ${item.mutation} ${item.name} -> ${stackValue}\n`;
             });
 
             profile.bloomBuck += totalEarnings;
@@ -36,9 +37,9 @@ module.exports = {
             await profile.save();
 
             const embed = new EmbedBuilder()
-                .setTitle("💰 Sale Complete!")
+                .setTitle("Sale Complete!")
                 .setColor("#2ECC71")
-                .setDescription(`You sold all your crops and earned **🪙 ${totalEarnings}**!\n\n**You now have a total of 🪙 ${profile.bloomBuck}.**`)
+                .setDescription(`You sold all your crops and earned **${totalEarnings}**!\n\n**You now have a total of ${profile.bloomBuck}.**`)
                 .addFields({ name: 'Sold Items', value: soldItemsSummary });
 
             await interaction.editReply({ embeds: [embed] });
