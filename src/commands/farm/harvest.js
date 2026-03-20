@@ -1,7 +1,8 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const UserProfile = require('../../models/userProfile');
 const plantsData = require('../../data/plantsData');
-const { getMutation } = require('../../utils/rng');
+const { sendNoProfileMessage } = require('../../utils/showNoProfileMessage');
+const { calculatePlantValue } = require('../../utils/calculatePlantValue')
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -9,67 +10,72 @@ module.exports = {
         .setDescription('Harvest all fully grown plants in your garden.'),
 
     async execute(interaction) {
-        const profile = await UserProfile.findOne({ userId: interaction.user.id });
+        await interaction.deferReply();
 
-        const { sendNoProfileMessage } = require('../../utils/showNoProfileMessage');
-        if (!profile) {
-            return sendNoProfileMessage(interaction)
-        }
+        try {
+            const profile = await UserProfile.findOne({ userId: interaction.user.id });
 
-        if (profile.activeGarden.length === 0) {
-            return interaction.reply({ content: "You have nothing planted in your garden!", ephemeral: true });
-        }
+            if (!profile) {
+                return sendNoProfileMessage(interaction);
+            }
 
-        const now = Date.now();
-        let harvestedCount = 0;
-        let harvestResults = [];
-        const newGarden = [];
+            if (profile.activeGarden.length === 0) {
+                return interaction.editReply({ content: "You have nothing planted in your garden!" });
+            }
 
-        profile.activeGarden.forEach(plant => {
-            if (now >= plant.readyAt) {
-                harvestedCount++;
-                const baseData = plantsData[plant.plantName];
-                const mutation = getMutation();
-                const finalValue = baseData.baseValue * mutation.multiplier;
+            const now = Date.now();
+            let harvestedCount = 0;
+            let harvestResults = [];
+            const newGarden = [];
 
-                const existingItem = profile.inventory.find(item => 
-                    item.name === plant.plantName && item.mutation === mutation.name
-                );
+            profile.activeGarden.forEach(plant => {
+                if (now >= plant.readyAt) {
+                    harvestedCount++;
+                    const baseData = plantsData[plant.plantName];
+                    const mutation = plant.mutation;
+                    const variant = plant.variant;
+                    const weight = plant.weight;
+                    const baseValue = baseData.baseValue;
+                    const baseWeight = baseData.baseWeight;
 
-                if (existingItem) {
-                    existingItem.amount += 1;
-                } else {
+                    const baseMutatedValue = calculatePlantValue(mutation, weight, baseWeight, baseValue, variant);
+
                     profile.inventory.push({
                         name: plant.plantName,
                         mutation: mutation.name,
-                        value: finalValue, // value for one of the plant
-                        amount: 1
+                        value: baseMutatedValue, 
+                        weight: weight
                     });
+                    
+                    if (mutation?.name?.length > 0) {
+                        harvestResults.push(`${mutation.name} **${plant.plantName}** (${weight}kg)`);
+                    } else {
+                        harvestResults.push(`**${plant.plantName}** (${weight}kg)`);
+                    }
+                } else {
+                    newGarden.push(plant);
                 }
-                
-                harvestResults.push(`${mutation.name} **${plant.plantName}** (Worth 🪙 ${finalValue})`);
-            } else {
-                newGarden.push(plant);
+            });
+
+            if (harvestedCount === 0) {
+                return interaction.editReply({ content: "None of your plants are ready to harvest yet! Check back later." });
             }
-        });
 
-        if (harvestedCount === 0) {
-            return interaction.reply({ content: "None of your plants are ready to harvest yet!", ephemeral: true });
+            profile.activeGarden = newGarden;
+            profile.markModified('inventory'); 
+            await profile.save();
+
+            const embed = new EmbedBuilder()
+                .setTitle('Harvest Complete!')
+                .setColor('#43B581')
+                .setDescription(`You harvested ${harvestedCount} plants:\n\n` + harvestResults.join('\n'))
+                .setFooter({ text: 'Use /inventory to see your crops!' });
+
+            await interaction.editReply({ embeds: [embed] });
+
+        } catch (err) {
+            console.error("Error in /harvest:", err);
+            await interaction.editReply({ content: "Something went wrong while trying to harvest your plants." });
         }
-
-        // save
-        profile.activeGarden = newGarden;
-
-        profile.markModified('inventory'); 
-        
-        await profile.save();
-
-        const embed = new EmbedBuilder()
-            .setTitle('Harvest Complete!')
-            .setColor('#43B581')
-            .setDescription(`You harvested ${harvestedCount} plants:\n\n` + harvestResults.join('\n'))
-            .setFooter({ text: 'Use /sell to trade these for BloomBucks!' });
-
-        await interaction.reply({ embeds: [embed] });
     }
 };

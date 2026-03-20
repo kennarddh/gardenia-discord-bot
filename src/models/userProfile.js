@@ -12,16 +12,20 @@ const userProfileSchema = new Schema({
     
     // { plantName: "Wheat", readyAt: 123 }
     activeGarden: [{ 
-        plantName: String, 
+        plantName: String,
+        mutation: [String],
+        variant: String,
+        weight: Number, 
         readyAt: Number 
     }],
     
     // { name: "Wheat", mutation: "Golden", value: 123, amount: 123 }
     inventory: [{
         name: String,
-        mutation: String,
+        mutation: [String],
+        variant: String,
         value: Number,
-        amount: Number
+        weight: Number
     }]
 });
 

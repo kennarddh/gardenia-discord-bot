@@ -1,40 +1,54 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-const UserProfile = require('../../models/userProfile');
+const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
+const UserProfile = require("../../models/userProfile");
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('garden')
-        .setDescription('View your currently growing plants.'),
+        .setName("garden")
+        .setDescription("View your currently growing plants."),
 
     async execute(interaction) {
-        const profile = await UserProfile.findOne({ userId: interaction.user.id });
+        const profile = await UserProfile.findOne({
+            userId: interaction.user.id,
+        });
 
-        const { sendNoProfileMessage } = require('../../utils/showNoProfileMessage');
+        const {
+            sendNoProfileMessage,
+        } = require("../../utils/showNoProfileMessage");
         if (!profile) {
-            return sendNoProfileMessage(interaction)
+            return sendNoProfileMessage(interaction);
         }
-        
+
         const embed = new EmbedBuilder()
             .setTitle(`🏡 ${interaction.user.username}'s Garden`)
-            .setColor('#2ECC71')
-            .setDescription(`Slots used: **${profile.activeGarden.length} / ${profile.maxSlots}**\n\n`);
+            .setColor("#2ECC71")
+            .setDescription(
+                `Slots used: **${profile.activeGarden.length} / ${profile.maxSlots}**\n\n`,
+            );
 
         if (profile.activeGarden.length === 0) {
-            embed.setDescription(embed.data.description + "*Your garden is completely empty. Use `/plant` to start growing!*");
+            embed.setDescription(
+                embed.data.description +
+                    "*Your garden is completely empty. Use `/plant` to start growing!*",
+            );
         } else {
             let gardenText = "";
             profile.activeGarden.forEach((plant, index) => {
                 const timestamp = Math.floor(plant.readyAt / 1000);
-                
+
+                let mutationText = "";
+                if (plant.mutation && plant.mutation.length > 0) {
+                    mutationText = ` (${plant.mutation.join(", ")})`;
+                }
+
                 if (Date.now() >= plant.readyAt) {
-                    gardenText += `${index + 1}. **${plant.plantName}** - Ready to /harvest!\n`;
+                    gardenText += `${index + 1}. **${plant.plantName}**${mutationText} - Ready to /harvest!\n`;
                 } else {
-                    gardenText += `${index + 1}. **${plant.plantName}** - Growing: <t:${timestamp}:R>\n`;
+                    gardenText += `${index + 1}. **${plant.plantName}**${mutationText} - Growing: <t:${timestamp}:R>\n`;
                 }
             });
             embed.setDescription(embed.data.description + gardenText);
         }
 
         await interaction.reply({ embeds: [embed] });
-    }
+    },
 };

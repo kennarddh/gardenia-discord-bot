@@ -13,7 +13,7 @@ const { sendNoProfileMessage } = require('../../utils/showNoProfileMessage');
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('inventory')
-        .setDescription('View all your harvested plants and mutations in pages.'),
+        .setDescription('View all your harvested plants and mutations.'),
 
     async execute(interaction) {
         await interaction.deferReply({ ephemeral: true });
@@ -29,7 +29,7 @@ module.exports = {
                 const emptyEmbed = new EmbedBuilder()
                     .setTitle(`${interaction.user.username}'s Inventory`)
                     .setColor('#E74C3C')
-                    .setDescription("Your inventory is completely empty!.");
+                    .setDescription("Your inventory is completely empty! Harvest some crops from your `/garden`.");
                 
                 return interaction.editReply({ embeds: [emptyEmbed] });
             }
@@ -38,22 +38,29 @@ module.exports = {
             const totalPages = Math.ceil(profile.inventory.length / itemsPerPage);
             let currentPage = 0;
 
-            const totalInventoryValue = profile.inventory.reduce((total, item) => total + (item.value * item.amount), 0);
+            const totalInventoryValue = Math.round(profile.inventory.reduce((total, item) => total + item.value, 0));
 
             const generateInventoryUI = () => {
                 const start = currentPage * itemsPerPage;
                 const currentItems = profile.inventory.slice(start, start + itemsPerPage);
 
                 const embed = new EmbedBuilder()
-                    .setTitle(`🎒 ${interaction.user.username}'s Harvested Crops`)
+                    .setTitle(`${interaction.user.username}'s Harvested Crops`)
                     .setColor('#3498DB')
-                    .setDescription(`**Total Inventory Value:** 🪙 ${totalInventoryValue} BloomBucks\n\n*Page ${currentPage + 1} of ${totalPages}*`);
+                    .setDescription(`**Total Inventory Value:** 💵 ${totalInventoryValue} BloomBucks\n\n*Page ${currentPage + 1} of ${totalPages}*`);
 
-                currentItems.forEach(item => {
-                    const stackValue = item.value * item.amount;
+                currentItems.forEach((item, index) => {
+                    const itemIndex = start + index + 1;
+
+                    const mutationText = item.mutation.length > 0 ? item.mutation.join(' ') + ' ' : '';
+                    
+                    const fieldName = `${itemIndex}. ${mutationText}${item.name} (${item.weight}kg)`;
+                
+                    const fieldValue = `**Sell Value:** 💵 ${Math.round(item.value)}`;
+
                     embed.addFields({
-                        name: `${item.mutation} ${item.name}`,
-                        value: `**Amount:** ${item.amount}x\n**Sell Value:** 🪙 ${stackValue} (🪙 ${item.value} each)`,
+                        name: fieldName,
+                        value: fieldValue,
                         inline: false
                     });
                 });
@@ -96,12 +103,10 @@ module.exports = {
 
                     if (i.customId === "prev") {
                         currentPage--;
-                        await i.update(generateInventoryUI());
-                    }
-                    else if (i.customId === "next") {
+                    } else if (i.customId === "next") {
                         currentPage++;
-                        await i.update(generateInventoryUI());
                     }
+                    await i.update(generateInventoryUI());
                 });
 
                 collector.on("end", async () => {
@@ -115,7 +120,11 @@ module.exports = {
                             embeds: disabledUi.embeds, 
                             components: disabledUi.components
                         });
-                    } catch (err) {}
+                    } catch (err) {
+                        if (err.code !== 10008) {
+                            console.error("Failed to disable inventory buttons:", err);
+                        }
+                    }
                 });
             }
 
