@@ -49,7 +49,6 @@ const userProfileSchema = new Schema({
 		harvestPlants: { type: Map, of: Number, default: { total: 0 } },
 		sellCrops: { type: Map, of: Number, default: { total: 0 } },
 		buySeeds: { type: Map, of: Number, default: { total: 0 } },
-		achievementsDone: { type: Number, default: 0 },
 	},
 })
 
