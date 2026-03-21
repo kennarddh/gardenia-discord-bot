@@ -15,7 +15,7 @@
 	"main": "index.js",
 	"scripts": {
 		"start": "node ./src/index.js",
-		"deploy:commands": "node ./src/deploy-commands.js"
+		"deploy:commands": "node ./src/deploy-command.js"
 	},
 	"dependencies": {
 		"discord.js": "^14.25.1",
