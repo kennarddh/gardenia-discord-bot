@@ -1,12 +1,30 @@
 {
-  "devDependencies": {
-    "@eslint/js": "^10.0.1",
-    "eslint": "^10.0.3"
-  },
-  "dependencies": {
-    "discord.js": "^14.25.1",
-    "dotenv": "^17.3.1",
-    "mongodb": "^7.1.0",
-    "mongoose": "^9.3.0"
-  }
+	"name": "gardenia-discord-bot",
+	"version": "1.0.0",
+	"description": "Growing your garden.",
+	"homepage": "https://github.com/loosk/gardenia-discord-bot#readme",
+	"bugs": {
+		"url": "https://github.com/loosk/gardenia-discord-bot/issues"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/loosk/gardenia-discord-bot.git"
+	},
+	"author": "loosk",
+	"type": "commonjs",
+	"main": "index.js",
+	"scripts": {
+		"start": "node ./src/index.js",
+		"deploy:commands": "node ./src/deploy-command.js"
+	},
+	"dependencies": {
+		"discord.js": "^14.25.1",
+		"dotenv": "^17.3.1",
+		"mongodb": "^7.1.0",
+		"mongoose": "^9.3.0"
+	},
+	"devDependencies": {
+		"@eslint/js": "^10.0.1",
+		"eslint": "^10.0.3"
+	}
 }
