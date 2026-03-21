@@ -1,20 +1,20 @@
 const plantsData = require('./plantsData')
 
-const questTypes = [
+const achivementTypes = [
 	'plantPlants',
 	'harvestPlants',
 	'sellCrops',
 	'buySeeds',
-	'completeQuests',
+	'completeAchivements',
 ]
 
 const plantPlantsAmounts = [10, 50, 100, 500, 1000]
 const harvestPlantsAmounts = [10, 50, 100, 500, 1000]
 const sellCropsAmounts = [10, 50, 100, 500, 1000]
 const buySeedsAmounts = [10, 50, 100, 500, 1000]
-const completeQuestsAmounts = [5, 10, 20, 50, 100]
+const completeAchivementsAmounts = [5, 10, 20, 50, 100]
 
-const quests = [
+const achivements = [
 	...plantPlantsAmounts
 		.map(amount => [
 			...Object.keys(plantsData).map(plantName => ({
@@ -103,14 +103,14 @@ const quests = [
 			},
 		])
 		.flat(),
-	...completeQuestsAmounts.map(amount => ({
-		id: `complete-quests-${amount}`,
-		type: 'completeQuests',
-		description: `Complete ${amount} quests.`,
+	...completeAchivementsAmounts.map(amount => ({
+		id: `complete-achivements-${amount}`,
+		type: 'completeAchivements',
+		description: `Complete ${amount} achivements.`,
 		meta: {
 			amount,
 		},
 	})),
 ]
 
-module.exports = { questTypes, quests }
+module.exports = { achivementTypes, achivements }
