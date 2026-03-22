@@ -1,31 +1,37 @@
-const { mutations, variants } = require('../constants/config');
+const { mutations, variants } = require('../constants/config')
 
-function calculatePlantValue(mutation, weight, baseWeight, baseValue, variantName) {
-    const cropValue = baseValue * Math.pow(weight / baseWeight, 2);
+function calculatePlantValue(
+	mutation,
+	weight,
+	baseWeight,
+	baseValue,
+	variantName,
+) {
+	const cropValue = baseValue * Math.pow(weight / baseWeight, 2)
 
-    let sum = 0;
-    let count = 0;
+	let sum = 0
+	let count = 0
 
-    for (let m of mutation) {
-        const foundMutation = mutations.find(x => x.name === m);
-        if (foundMutation) {
-            sum += foundMutation.multiplier;
-            count++;
-        }
-    }
+	for (let m of mutation) {
+		const foundMutation = mutations.find(x => x.name === m)
+		if (foundMutation) {
+			sum += foundMutation.multiplier
+			count++
+		}
+	}
 
-    let variantMultiplier = 1;
+	let variantMultiplier = 1
 
-    const foundVariant = variants.find(v => v.name === variantName);
-    if (foundVariant) {
-        variantMultiplier = foundVariant.multiplier;
-    }
-    
-    const totalMultiplier = variantMultiplier * (1 + (sum - count));
+	const foundVariant = variants.find(v => v.name === variantName)
+	if (foundVariant) {
+		variantMultiplier = foundVariant.multiplier
+	}
 
-    const totalPrice = cropValue * totalMultiplier;
+	const totalMultiplier = variantMultiplier * (1 + (sum - count))
 
-    return totalPrice;
+	const totalPrice = cropValue * totalMultiplier
+
+	return totalPrice
 }
 
-module.exports = { calculatePlantValue };
+module.exports = { calculatePlantValue }

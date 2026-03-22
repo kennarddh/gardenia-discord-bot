@@ -1,7 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js')
 const { startMutations } = require('../../utils/startMutations')
 const config = require('../../constants/config')
-const { isAdmin } = require('../../utils/isAdmin')  
+const { isAdmin } = require('../../utils/isAdmin')
 
 module.exports = {
 	data: new SlashCommandBuilder()
