@@ -4,7 +4,6 @@ const {
 	startingBloomBuck,
 	upgradeCost,
 } = require('../constants/config')
-const { achivements } = require('../data/achivements')
 
 const userProfileSchema = new Schema({
 	userId: { type: String, required: true, unique: true },
@@ -45,10 +44,26 @@ const userProfileSchema = new Schema({
 	},
 
 	tracking: {
-		plantPlants: { type: Map, of: Number, default: { total: 0 } },
-		harvestPlants: { type: Map, of: Number, default: { total: 0 } },
-		sellCrops: { type: Map, of: Number, default: { total: 0 } },
-		buySeeds: { type: Map, of: Number, default: { total: 0 } },
+		plantPlants: {
+			type: Map,
+			of: Number,
+			default: () => new Map([['total', 0]]),
+		},
+		harvestPlants: {
+			type: Map,
+			of: Number,
+			default: () => new Map([['total', 0]]),
+		},
+		sellCrops: {
+			type: Map,
+			of: Number,
+			default: () => new Map([['total', 0]]),
+		},
+		buySeeds: {
+			type: Map,
+			of: Number,
+			default: () => new Map([['total', 0]]),
+		},
 	},
 })
 

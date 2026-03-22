@@ -1,111 +1,124 @@
-const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
-const UserProfile = require("../../models/userProfile");
-const plantsData = require("../../data/plantsData");
-const { sendNoProfileMessage } = require("../../utils/showNoProfileMessage");
-const { calculatePlantValue } = require("../../utils/calculatePlantValue");
+const { SlashCommandBuilder, EmbedBuilder } = require('discord.js')
+const UserProfile = require('../../models/userProfile')
+const plantsData = require('../../data/plantsData')
+const { sendNoProfileMessage } = require('../../utils/showNoProfileMessage')
+const { calculatePlantValue } = require('../../utils/calculatePlantValue')
+const { checkAchievements } = require('../../utils/checkAchievements')
 
 module.exports = {
-    data: new SlashCommandBuilder()
-        .setName("harvestall")
-        .setDescription("Harvest all fully grown plants from your garden."),
+	data: new SlashCommandBuilder()
+		.setName('harvestall')
+		.setDescription('Harvest all fully grown plants from your garden.'),
 
-    async execute(interaction) {
-        await interaction.deferReply();
+	async execute(interaction) {
+		await interaction.deferReply()
 
-        try {
-            const profile = await UserProfile.findOne({
-                userId: interaction.user.id,
-            });
+		try {
+			const profile = await UserProfile.findOne({
+				userId: interaction.user.id,
+			})
 
-            if (!profile) {
-                return sendNoProfileMessage(interaction);
-            }
+			if (!profile) {
+				return sendNoProfileMessage(interaction)
+			}
 
-            if (profile.activeGarden.length === 0) {
-                return interaction.editReply({
-                    content: "You have nothing planted in your garden!",
-                });
-            }
+			if (profile.activeGarden.length === 0) {
+				return interaction.editReply({
+					content: 'You have nothing planted in your garden!',
+				})
+			}
 
-            const now = Date.now();
-            let harvestedCount = 0;
-            let harvestResults = [];
-            const newGarden = [];
+			const now = Date.now()
+			let harvestedCount = 0
+			let harvestResults = []
+			const newGarden = []
 
-            for (const plant of profile.activeGarden) {
-                if (now >= plant.readyAt && !plant.isFavorited) {
-                    harvestedCount++;
-                    const baseData = plantsData[plant.plantName];
+			for (const plant of profile.activeGarden) {
+				if (now >= plant.readyAt && !plant.isFavorited) {
+					harvestedCount++
+					const baseData = plantsData[plant.plantName]
 
-                    const mutation = plant.mutation || [];
-                    const variant = plant.variant || "Normal";
-                    const weight = plant.weight;
-                    const baseValue = baseData.baseValue;
-                    const baseWeight = baseData.baseWeight;
+					const tracker = profile.tracking.harvestPlants
+					tracker.set(
+						plant.plantName,
+						(tracker.get(plant.plantName) || 0) + 1,
+					)
+					tracker.set('total', (tracker.get('total') || 0) + 1)
 
-                    let baseMutatedValue = calculatePlantValue(
-                        mutation,
-                        weight,
-                        baseWeight,
-                        baseValue,
-                        variant,
-                    );
+					const mutation = plant.mutation || []
+					const variant = plant.variant || 'Normal'
+					const weight = plant.weight
+					const baseValue = baseData.baseValue
+					const baseWeight = baseData.baseWeight
 
-                    if (isNaN(baseMutatedValue) || baseMutatedValue === null) {
-                        console.error(
-                            `calculatePlantValue returned NaN for ${plant.plantName}! Check your math utility.`,
-                        );
-                        baseMutatedValue = baseValue;
-                    }
+					let baseMutatedValue = calculatePlantValue(
+						mutation,
+						weight,
+						baseWeight,
+						baseValue,
+						variant,
+					)
 
-                    profile.inventory.push({
-                        name: plant.plantName,
-                        mutation: mutation,
-                        variant: variant,
-                        value: Math.round(baseMutatedValue),
-                        weight: weight,
-                        isFavorited: false
-                    });
+					if (isNaN(baseMutatedValue) || baseMutatedValue === null) {
+						console.error(
+							`calculatePlantValue returned NaN for ${plant.plantName}! Check your math utility.`,
+						)
+						baseMutatedValue = baseValue
+					}
 
-                    let prefix = "";
-                    if (variant !== "Normal") prefix += variant + " ";
-                    if (mutation.length > 0) prefix += mutation.join(" ") + " ";
+					profile.inventory.push({
+						name: plant.plantName,
+						mutation: mutation,
+						variant: variant,
+						value: Math.round(baseMutatedValue),
+						weight: weight,
+						isFavorited: false,
+					})
 
-                    harvestResults.push(
-                        `• ${prefix}**${plant.plantName}** (${weight}kg)`,
-                    );
-                } else {
-                    newGarden.push(plant);
-                }
-            }
+					let prefix = ''
+					if (variant !== 'Normal') prefix += variant + ' '
+					if (mutation.length > 0) prefix += mutation.join(' ') + ' '
 
-            if (harvestedCount === 0) {
-                return interaction.editReply({
-                    content:
-                        "None of your plants are ready to harvest yet! Check back later.",
-                });
-            }
+					harvestResults.push(
+						`• ${prefix}**${plant.plantName}** (${weight}kg)`,
+					)
+				} else {
+					newGarden.push(plant)
+				}
+			}
 
-            profile.activeGarden = newGarden;
-            profile.markModified("inventory");
-            await profile.save();
+			if (harvestedCount === 0) {
+				return interaction.editReply({
+					content:
+						'None of your plants are ready to harvest yet! Check back later.',
+				})
+			}
 
-            const embed = new EmbedBuilder()
-                .setTitle("Harvest Complete!")
-                .setColor("#43B581")
-                .setDescription(
-                    `You harvested ${harvestedCount} plants:\n\n` +
-                        harvestResults.join("\n"),
-                )
-                .setFooter({ text: "Use /inventory to see your crops!" });
+			profile.activeGarden = newGarden
+			profile.markModified('inventory')
 
-            await interaction.editReply({ embeds: [embed] });
-        } catch (err) {
-            console.error("Error in /harvestall:", err);
-            await interaction.editReply({
-                content:
-                    "Something went wrong while trying to harvest your plants.",
-            });
-        }
-    },
-};
+			profile.markModified('tracking')
+
+			await checkAchievements(profile)
+
+			await profile.save()
+
+			const embed = new EmbedBuilder()
+				.setTitle('Harvest Complete!')
+				.setColor('#43B581')
+				.setDescription(
+					`You harvested ${harvestedCount} plants:\n\n` +
+						harvestResults.join('\n'),
+				)
+				.setFooter({ text: 'Use /inventory to see your crops!' })
+
+			await interaction.editReply({ embeds: [embed] })
+		} catch (err) {
+			console.error('Error in /harvestall:', err)
+			await interaction.editReply({
+				content:
+					'Something went wrong while trying to harvest your plants.',
+			})
+		}
+	},
+}
