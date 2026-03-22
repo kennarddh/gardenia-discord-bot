@@ -25,6 +25,7 @@ const achivements = [
 					plant: plantName,
 					amount,
 				},
+				isMeta: false,
 			})),
 			{
 				id: `plant-any-${amount}`,
@@ -34,6 +35,7 @@ const achivements = [
 					plant: null,
 					amount,
 				},
+				isMeta: false,
 			},
 		])
 		.flat(),
@@ -47,6 +49,7 @@ const achivements = [
 					plant: plantName,
 					amount,
 				},
+				isMeta: false,
 			})),
 			{
 				id: `harvest-any-${amount}`,
@@ -56,19 +59,21 @@ const achivements = [
 					plant: null,
 					amount,
 				},
+				isMeta: false,
 			},
 		])
 		.flat(),
 	...sellCropsAmounts
 		.map(amount => [
 			...Object.keys(plantsData).map(plantName => ({
-				id: `sell-crops-${plantName}-${amount}`,
+				id: `sell-crops-specific-${plantName}-${amount}`,
 				type: 'sellCrops',
 				description: `Sell ${amount} of ${plantName} from your inventory.`,
 				meta: {
 					plant: plantName,
 					amount,
 				},
+				isMeta: false,
 			})),
 			{
 				id: `sell-crops-any-${amount}`,
@@ -78,19 +83,21 @@ const achivements = [
 					plant: null,
 					amount,
 				},
+				isMeta: false,
 			},
 		])
 		.flat(),
 	...buySeedsAmounts
 		.map(amount => [
 			...Object.keys(plantsData).map(plantName => ({
-				id: `buy-seeds-${plantName}-${amount}`,
+				id: `buy-seeds-specific-${plantName}-${amount}`,
 				type: 'buySeeds',
 				description: `Buy ${amount} of ${plantName} seeds from the shop.`,
 				meta: {
 					plant: plantName,
 					amount,
 				},
+				isMeta: false,
 			})),
 			{
 				id: `buy-seeds-any-${amount}`,
@@ -100,6 +107,7 @@ const achivements = [
 					plant: null,
 					amount,
 				},
+				isMeta: false,
 			},
 		])
 		.flat(),
@@ -110,6 +118,7 @@ const achivements = [
 		meta: {
 			amount,
 		},
+		isMeta: true,
 	})),
 ]
 

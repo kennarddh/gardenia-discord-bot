@@ -27,7 +27,7 @@ async function migrateProfiles() {
 		console.log('Migration complete!')
 	}
 
-    await mongoose.disconnect()
+	await mongoose.disconnect()
 }
 
 migrateProfiles()
