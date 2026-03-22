@@ -63,10 +63,7 @@ module.exports = {
                 }
             });
         }
-        embed.addFields({ name: 'Active Garden', value: gardenText, inline: false });
-
         
-
         await interaction.reply({ embeds: [embed] });
     }
 };
