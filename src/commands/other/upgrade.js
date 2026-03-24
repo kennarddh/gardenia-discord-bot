@@ -34,7 +34,7 @@ module.exports = {
 
 				const embed = new EmbedBuilder()
 					.setTitle(`Upgrades: ${currentUpgrade.name}`)
-					.setColor('#5865F2')
+					.setColor('#2b2d31')
 					.setDescription(
 						`**Your Wallet:** 💵 ${Math.round(profileData.bloomBuck)}\n\n${currentUpgrade.description}`
 					)
@@ -74,7 +74,7 @@ module.exports = {
 							id: '1485229572189589555',
 							name: 'rightWhiteArrow'
 						})
-						.setStyle(ButtonStyle.Secondary)
+						.setStyle(ButtonStyle.Primary)
 						.setDisabled(currentPage === 0),
 					new ButtonBuilder()
 						.setCustomId('next')
@@ -126,9 +126,6 @@ module.exports = {
                     if (currentLevel >= upgradeData.maxLevel) {
                         return i.reply({ content: `You have already reached the max level for this upgrade.`, ephemeral: true });
                     }
-
-                    latestProfile.bloomBuck -= cost;
-                    latestProfile.upgrades.set(upgradeId, currentLevel + 1);
 
                     latestProfile.bloomBuck -= cost;
                     latestProfile.upgrades.set(upgradeId, currentLevel + 1);

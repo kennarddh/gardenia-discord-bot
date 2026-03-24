@@ -46,7 +46,7 @@ module.exports = {
 				return interaction.editReply({ embeds: [emptyEmbed] })
 			}
 
-			const itemsPerPage = 5
+			const itemsPerPage = 10
 			const totalPages = Math.ceil(
 				profile.inventory.length / itemsPerPage,
 			)
@@ -102,15 +102,14 @@ module.exports = {
 					const navRow = new ActionRowBuilder().addComponents(
 						new ButtonBuilder()
 							.setCustomId('prev')
-							.setEmoji('◀️')
-							.setLabel('Previous')
+							.setEmoji({ id: '1485229572189589555', name: 'rightWhiteArrow' })
+							
 							.setStyle(ButtonStyle.Secondary)
 							.setDisabled(currentPage === 0),
 
 						new ButtonBuilder()
 							.setCustomId('next')
-							.setEmoji('▶️')
-							.setLabel('Next')
+							.setEmoji({ id: '1485228358575853689', name: 'whiteArrow' })
 							.setStyle(ButtonStyle.Secondary)
 							.setDisabled(currentPage >= totalPages - 1),
 					)
@@ -125,7 +124,7 @@ module.exports = {
 			if (totalPages > 1) {
 				const collector = response.createMessageComponentCollector({
 					componentType: ComponentType.Button,
-					time: 60000,
+					time: 120000,
 				})
 
 				collector.on('collect', async i => {
