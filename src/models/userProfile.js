@@ -8,8 +8,14 @@ const {
 const userProfileSchema = new Schema({
 	userId: { type: String, required: true, unique: true },
 	bloomBuck: { type: Number, default: startingBloomBuck },
+
+	upgrades: {
+    	type: Map,
+    	of: Number,
+    	default: {}
+  	},
+
 	maxSlots: { type: Number, default: baseGardenSlots },
-	currentUpgradeCost: { type: Number, default: upgradeCost },
 
 	// { "Wheat": 123, "Tomato": 123 }
 	seeds: { type: Map, of: Number, default: {} },
