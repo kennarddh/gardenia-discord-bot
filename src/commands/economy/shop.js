@@ -241,7 +241,9 @@ module.exports = {
                     const disabledUi = generateShopUI(finalProfile, currentView);
 					disabledUi.components.forEach(row => row.components.forEach(comp => comp.setDisabled(true)))
 					await interaction.editReply({ embeds: disabledUi.embeds, components: disabledUi.components, content: '*This shop session has expired.*' })
-				} catch (err) {}
+				} catch (err) {
+					console.error('Error disabling shop UI after collector ended:', err)
+				}
 			});
 		} catch (err) {
 			console.error('Error in /shop command:', err)

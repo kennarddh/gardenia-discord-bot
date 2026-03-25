@@ -167,7 +167,9 @@ module.exports = {
 						embeds: disabledUi.embeds,
 						components: disabledUi.components,
 					});
-				} catch (err) {}
+				} catch (err) {
+					console.error('Error disabling buttons after collector ended:', err);
+				}
 			});
 		} catch (err) {
 			console.error('Error in /upgrade command:', err);

@@ -118,7 +118,9 @@ module.exports = {
 						disabledUi.components[0].components.forEach(button => button.setDisabled(true));
 						await interaction.editReply({ components: disabledUi.components });
 					}
-				} catch (err) {}
+				} catch (err) {
+					console.error('Error disabling buttons after collector ended:', err);
+				}
 			});
 
 		} catch (error) {

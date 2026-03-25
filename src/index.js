@@ -151,9 +151,11 @@ async function startBot() {
 			socketTimeoutMS: 45000,
 			family: 4,
 		})
+		
 		console.log('Connected to MongoDB!')
 	} catch (err) {
 		console.error('MongoDB connection error:', err)
+
 		process.exit(1)
 	}
 
