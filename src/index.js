@@ -106,7 +106,7 @@ client.on(Events.InteractionCreate, async interaction => {
 			const timeLeft = ((expirationTime - now) / 1000).toFixed(1)
 			return interaction.reply({
 				content: `Please wait **${timeLeft}s** before reusing \`${command.data.name}\`.`,
-				ephemeral: true,
+				flags: MessageFlags.Ephemeral,
 			})
 		}
 	}
@@ -151,7 +151,7 @@ async function startBot() {
 			socketTimeoutMS: 45000,
 			family: 4,
 		})
-		
+
 		console.log('Connected to MongoDB!')
 	} catch (err) {
 		console.error('MongoDB connection error:', err)
